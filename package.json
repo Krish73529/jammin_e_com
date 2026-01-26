@@ -1,0 +1,15 @@
+{
+  "name": "ecom-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node ./build/server.js",
+    "dev": "ts-node-dev ./src/server.ts",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
