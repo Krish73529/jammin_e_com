@@ -3,6 +3,10 @@ import express, { Request, Response } from "express";
 import { connectDb } from "./config/db.config";
 import { ENV_CONFIG } from "./config/env.config";
 
+//!importing routes
+import authRoutes from "./routes/auth.routes";
+import userRoutes from "./routes/user.routes";
+
 const app = express();
 const PORT = ENV_CONFIG.port || 8000;
 
@@ -19,6 +23,10 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 //!using routes
+
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+
 //!listen
 
 app.listen(PORT, () => {

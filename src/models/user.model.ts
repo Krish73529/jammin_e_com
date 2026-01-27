@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import { ROLE } from "../types/enum.types";
 //user schema
 const user_schema = new mongoose.Schema(
   {
@@ -26,17 +26,19 @@ const user_schema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["ADMIN", "USER"],
-      default: "USER",
+      enum: Object.values(ROLE),
+      default: "ROLE.USER",
     },
-    active: {
+    is_verified: {
       type: Boolean,
       default: false,
     },
-
-    //profile image:{
-    //}
+    phone: {
+      type: String,
+    },
+    //profileimage
   },
+
   { timestamps: true },
 );
 //! user model
