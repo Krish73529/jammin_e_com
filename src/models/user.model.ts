@@ -27,7 +27,7 @@ const user_schema = new mongoose.Schema(
     role: {
       type: String,
       enum: Object.values(ROLE),
-      default: "ROLE.USER",
+      default: ROLE.USER,
     },
     is_verified: {
       type: Boolean,
@@ -37,6 +37,18 @@ const user_schema = new mongoose.Schema(
       type: String,
     },
     //profileimage
+    //image  upload => server=> cloud
+    //cloudinary => aws, azure
+
+    profile_image: {
+      type: {
+        path: {
+          type: String,
+          required: [true, "profile_image url is required"],
+        },
+      },
+      required: false,
+    },
   },
 
   { timestamps: true },
