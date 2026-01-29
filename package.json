@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node ./build/server.js",
-    "dev": "ts-node-dev ./src/server.ts",
+    "dev": "ts-node-dev --transpile-only --respawn ./src/server.ts",
     "build": "tsc"
   },
   "keywords": [],
