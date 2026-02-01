@@ -17,8 +17,12 @@ connectDb();
 //! using middlewares
 app.use(express.json({ limit: "10mb" }));
 
+//parse read body json data=>  req.body
+app.use("/uploads", express.static("uploads/"));
+
 //! root route
 app.get("/", (req: Request, res: Response) => {
+  console.log("/ exe");
   res.status(200).json({
     message: "Server is up and running!!!",
   });
@@ -42,3 +46,6 @@ app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
   console.log("press ctrl+c p close the server");
 });
+
+//?error handler middleware
+app.use(errorHandler);

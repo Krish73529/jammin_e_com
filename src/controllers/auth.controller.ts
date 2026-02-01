@@ -3,6 +3,10 @@ import User from "../models/user.model";
 import { compareHash, hashText } from "../utils/bcrypt.utils";
 import AppError from "../middlewares/error_handler.middleware";
 import { ERROR_CODES } from "../types/enum.types";
+import { upload } from "../utils/cloudinary.utils";
+import { createOtp } from "../utils/opt.utils";
+
+const dir = "/profile_images";
 
 //! register
 export const register = async (
@@ -12,7 +16,8 @@ export const register = async (
 ) => {
   try {
     const { first_name, last_name, email, password, phone } = req.body;
-    console.log("register");
+
+    // console.log("register");
 
     const file = req.file;
 
@@ -52,13 +57,27 @@ export const register = async (
     // profile image
 
     if (file) {
+      //upload image to cloudinary
+      const { path, public_id } = await upload(file, dir);
+
+      // save image
       user.profile_image = {
-        path: file?.path as string,
-        public_id: File?.filename as string,
+        path: path,
+        public_id: public_id,
       };
     }
 
     // otp
+
+    const otp = createOtp();
+
+    console.log(otp);
+
+    const otp_hash = await hashText(otp);
+    const otp_expiry = new Date(Date.now() + 10 * 60 * 1000);
+    user.otp_hash = otp_hash;
+    user.otp_expiry = otp_expiry;
+
     //! save user
     await user.save();
 
@@ -122,6 +141,18 @@ export const login = async (
       data: user,
     });
   } catch (error: any) {
+    next(error);
+  }
+};
+
+//verify-otp
+export const verifyOtp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+  } catch (error) {
     next(error);
   }
 };

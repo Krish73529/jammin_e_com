@@ -33,6 +33,14 @@ const user_schema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    otp_hash: {
+      type: String,
+      select: false,
+    },
+    otp_expiry: {
+      type: Date,
+      select: false,
+    },
     phone: {
       type: String,
     },
@@ -45,6 +53,10 @@ const user_schema = new mongoose.Schema(
         path: {
           type: String,
           required: [true, "profile_image url is required"],
+        },
+        public_id: {
+          type: String,
+          required: [true, "public_id is required"],
         },
       },
       required: false,
