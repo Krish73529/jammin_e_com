@@ -4,7 +4,7 @@ import { compareHash, hashText } from "../utils/bcrypt.utils";
 import AppError from "../middlewares/error_handler.middleware";
 import { ERROR_CODES } from "../types/enum.types";
 import { upload } from "../utils/cloudinary.utils";
-import { createOtp } from "../utils/opt.utils";
+import { createOtp, resend_otp } from "../utils/opt.utils";
 import sendEmail from "../utils/nodemailer.utils";
 import { otpVerificationHtml } from "../utils/email.utils";
 
@@ -125,6 +125,10 @@ export const login = async (
       );
     }
 
+    if (!user.is_verified) {
+      throw new AppError("Account is not verified.", ERROR_CODES.AUTH_ERR, 400);
+    }
+
     console.log(user);
     //? compare password
     const is_pass_match = await compareHash(password, user.password);
@@ -194,7 +198,7 @@ export const verifyOtp = async (
       }
 
       // compare otp
-      const is_otp_matched = await compareHash(otp.tpString(), user.otp_hash);
+      const is_otp_matched = await compareHash(otp.toString(), user.otp_hash);
       if (!is_otp_matched) {
         throw new AppError(
           "Invalid OTP. Try resend otp",
@@ -226,4 +230,41 @@ export const verifyOtp = async (
   }
 };
 
-// resend otp
+//! resend otp
+export const resendOtp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email } = req.body;
+
+    //! find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw new AppError("User not found", ERROR_CODES.NOT_FOUND_ERR, 404);
+    }
+
+    if (user.is_verified) {
+      throw new AppError(
+        "Account already verified.",
+        ERROR_CODES.AUTH_ERR,
+        400,
+      );
+    }
+
+    // resend otp
+    await resend_otp(user);
+
+    res.status(201).json({
+      message: `Otp sent to email address ${user.email}.`,
+      code: "SUCCESS",
+      status: "success",
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//* get user profile
