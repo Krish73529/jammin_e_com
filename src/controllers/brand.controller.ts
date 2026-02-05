@@ -61,6 +61,8 @@ export const create = async (
   next: NextFunction,
 ) => {
   try {
+    // auth logic
+
     const { name, description } = req.body;
     const file = req.file;
     if (!name) {
@@ -105,6 +107,56 @@ export const create = async (
 };
 
 //* update
+export const update = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    // auth logic
+
+    // id
+    const { id } = req.params;
+    // data
+    const { name, description } = req.body;
+    // file
+    const file = req.file;
+
+    // find brand
+    const brand = await Brand.findOne({ _id: id });
+
+    if (!brand) {
+      throw new AppError("Brand not found", ERROR_CODES.NOT_FOUND_ERR, 400);
+    }
+
+    if (name) {
+      brand.name = name;
+    }
+
+    if (description) brand.description = description;
+
+    if (file) {
+      await deleteFile(brand.logo.public_id);
+      const { path, public_id } = await upload(file);
+      brand.logo = {
+        path: path,
+        public_id: public_id,
+      };
+    }
+
+    // save brand
+    await brand.save();
+
+    res.status(200).json({
+      message: `Brand ${brand._id} updated`,
+      data: brand,
+      code: "SUCCESS",
+      status: "success",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 //* delete
 export const remove = async (
@@ -112,6 +164,8 @@ export const remove = async (
   res: Response,
   next: NextFunction,
 ) => {
+  // auth logic
+
   try {
     const { id } = req.params;
 

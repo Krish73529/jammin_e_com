@@ -7,6 +7,8 @@ import { upload } from "../utils/cloudinary.utils";
 import { createOtp, resend_otp } from "../utils/opt.utils";
 import sendEmail from "../utils/nodemailer.utils";
 import { otpVerificationHtml } from "../utils/email.utils";
+import { signAccessToken } from "../utils/jwt.utils";
+import { ENV_CONFIG } from "../config/env.config";
 
 const dir = "/profile_images";
 
@@ -140,13 +142,31 @@ export const login = async (
         400,
       );
     }
-    //! success response
-    res.status(201).json({
-      message: "Login successfull!!",
-      code: "SUCCESS",
-      status: "success",
-      data: user,
+
+    // generate jwt token
+    const access_token = signAccessToken({
+      id: user._id,
+      email: user.email,
+      role: user.role,
     });
+
+    //! success response
+    res
+      .cookie("access_token", access_token, {
+        httpOnly: ENV_CONFIG.node_env === "development" ? false : true,
+        sameSite: ENV_CONFIG.node_env === "development" ? "lax" : "none",
+        secure: ENV_CONFIG.node_env === "development" ? false : true,
+        maxAge:
+          Number(ENV_CONFIG.cookie_expires_in || "7") * 24 * 60 * 60 * 1000,
+      })
+      .status(201)
+      .json({
+        message: "Login successfull!!",
+        code: "SUCCESS",
+        status: "success",
+        data: user,
+        access_token,
+      });
   } catch (error: any) {
     next(error);
   }
