@@ -10,3 +10,6 @@ export enum ERROR_CODES {
   INTERNAL_SERVER_ERR = "INTERNAL_SERVER_ERR",
   AUTH_ERR = "AUTH_ERR",
 }
+
+export const OnlyAdmins = [ROLE.ADMIN, ROLE.SUPER_ADMIN];
+export const OnlyUsers = [ROLE.USER];

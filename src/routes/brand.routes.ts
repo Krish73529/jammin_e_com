@@ -8,6 +8,7 @@ import {
 } from "../controllers/brand.controller";
 import { uploader } from "../middlewares/multer.middleware";
 import { authenticate } from "../middlewares/auth.middleware";
+import { OnlyAdmins } from "../types/enum.types";
 
 const router = express.Router();
 
@@ -20,10 +21,11 @@ router.get("/", authenticate(), getAll);
 router.get("/:id", getById);
 
 // create
-router.post("/", upload.single("logo"), create);
-router.put("/:id", upload.single("logo"), update);
+router.post("/", upload.single("logo"), authenticate(OnlyAdmins), create);
+//user,admin
+router.put("/:id", upload.single("logo"), authenticate(OnlyAdmins), update);
 
 //delete
-router.delete("/:id", remove);
+router.delete("/:id", authenticate(OnlyAdmins), remove);
 
 export default router;

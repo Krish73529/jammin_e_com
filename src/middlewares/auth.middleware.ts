@@ -1,11 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import AppError from "./error_handler.middleware";
-import { ERROR_CODES } from "../types/enum.types";
+import { ERROR_CODES, ROLE } from "../types/enum.types";
 import { verifyToken } from "../utils/jwt.utils";
+import { ENV_CONFIG } from "../config/env.config";
+import User from "../models/user.model";
 
-export const authenticate = () => {
+export const authenticate = (roles?: ROLE[]) => {
   // middleware
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // cookies
       const cookies = req.cookies;
@@ -28,6 +30,14 @@ export const authenticate = () => {
       console.log(decodedData);
       // check expired
       if (decodedData.exp * 1000 < Date.now()) {
+        //cookie
+        res.clearCookie("access_token", {
+          httpOnly: ENV_CONFIG.node_env === "development" ? false : true,
+          sameSite: ENV_CONFIG.node_env === "development" ? "lax" : "none",
+          secure: ENV_CONFIG.node_env === "development" ? false : true,
+          maxAge: Date.now(),
+        });
+
         throw new AppError(
           "Unauthorized.Access denied",
           ERROR_CODES.AUTH_ERR,
@@ -36,8 +46,25 @@ export const authenticate = () => {
       }
 
       // is user exists
+      const user = await User.findOne({ email: decodedData.email });
 
+      if (!user) {
+        throw new AppError(
+          "Unauthorized.Access denied",
+          ERROR_CODES.AUTH_ERR,
+          401,
+        );
+      }
       // check role
+
+      if (roles && Array.isArray(roles) && !roles.includes(user.role)) {
+        throw new AppError(
+          "Forbidden.Access denied",
+          ERROR_CODES.AUTH_ERR,
+          403,
+        );
+      }
+
       // next()
       next();
     } catch (error) {
