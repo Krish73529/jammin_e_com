@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
 import brandRoutes from "./routes/brand.routes";
 import categoryRoutes from "./routes/category.routes";
+import productRoutes from "./routes/product.routes";
 
 const app = express();
 const PORT = ENV_CONFIG.port || 8000;
@@ -36,6 +37,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/products", productRoutes);
 
 //! path not found error
 app.use((req: Request, res: Response, next: NextFunction) => {
