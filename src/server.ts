@@ -12,6 +12,7 @@ import userRoutes from "./routes/user.routes";
 import brandRoutes from "./routes/brand.routes";
 import categoryRoutes from "./routes/category.routes";
 import productRoutes from "./routes/product.routes";
+import wishlistRoutes from "./routes/wishlist.routes";
 
 const app = express();
 const PORT = ENV_CONFIG.port || 8000;
@@ -38,6 +39,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/wishlists", wishlistRoutes);
 
 //! path not found error
 app.use((req: Request, res: Response, next: NextFunction) => {

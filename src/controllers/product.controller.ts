@@ -4,7 +4,7 @@ import AppError from "../middlewares/error_handler.middleware";
 import { ERROR_CODES } from "../types/enum.types";
 import Category from "../models/category.model";
 import Brand from "../models/brand.model";
-import { upload } from "../utils/cloudinary.utils";
+import { deleteFile, upload } from "../utils/cloudinary.utils";
 
 interface IExpressFiles {
   cover_image?: Express.Multer.File[];
@@ -133,9 +133,14 @@ export const create = async (
       public_id: public_id,
     };
 
-    // images
+    //! images
+    if (images && images.length > 0) {
+      const promises = images.map(async (img) => await upload(img, dir));
+      const uploadedImages = await Promise.all(promises);
+      product.images = uploadedImages as any;
+    }
 
-    // save product
+    //! save product
     await product.save();
 
     res.status(201).json({
@@ -151,8 +156,166 @@ export const create = async (
 
 // update
 
+export const update = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    // id
+    const { id } = req.params;
+    // data
+    const {
+      name,
+      description,
+      category,
+      brand,
+      price,
+      stock,
+      is_featured,
+      new_arrival,
+    } = req.body;
+
+    // images
+    const { cover_image, images } = req.files as IExpressFiles;
+
+    const product = await Product.findOne({ _id: id });
+
+    if (!product) {
+      throw new AppError("Product not found", ERROR_CODES.NOT_FOUND_ERR, 404);
+    }
+
+    if (name) product.name = name;
+    if (description) product.description = description;
+    if (price) product.price = price;
+    if (stock) product.stock = stock;
+    if (is_featured) product.is_featured = is_featured;
+    if (new_arrival) product.new_arrival = new_arrival;
+
+    if (category && category.toString() !== product.category.toString()) {
+      const newCategory = await Category.findOne({ _id: category });
+      if (!newCategory) {
+        throw new AppError(
+          "Category not found",
+          ERROR_CODES.NOT_FOUND_ERR,
+          404,
+        );
+      }
+
+      product.category = newCategory._id;
+    }
+
+    if (brand && brand.toString() !== product.brand.toString()) {
+      const newBrand = await Brand.findOne({ _id: brand });
+      if (!newBrand) {
+        throw new AppError("Brand not found", ERROR_CODES.NOT_FOUND_ERR, 404);
+      }
+
+      product.brand = newBrand._id;
+    }
+
+    if (cover_image && cover_image[0]) {
+      const { path, public_id } = await upload(cover_image[0], dir);
+      await deleteFile(product.cover_image.public_id);
+      product.cover_image = {
+        path: path,
+        public_id: public_id,
+      };
+    }
+
+    //! images
+
+    res.status(200).json({
+      message: `Product ${id} updated`,
+      data: product,
+      status: "success",
+      code: "SUCCESS",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // delete
+
+export const remove = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id } = req.params; // product id
+
+    const product = await Product.findOne({ _id: id });
+    const imagesToDelete: string[] = [];
+
+    if (!product) {
+      throw new AppError("Product not found", ERROR_CODES.NOT_FOUND_ERR, 404);
+    }
+
+    imagesToDelete.push(product.cover_image.public_id);
+
+    if (product.images && product.images.length > 0) {
+      product.images.forEach((img: any) => {
+        if (img?.public_id) {
+          imagesToDelete.push(img?.public_id);
+        }
+      });
+    }
+
+    const promises = imagesToDelete.map(async (id) => await deleteFile(id));
+    await Promise.all(promises);
+
+    // await Promise.all(imagesToDelete.map(async (id) => await deleteFile(id)));
+
+    await product.deleteOne();
+
+    res.status(200).json({
+      message: `Product ${id} deleted`,
+      status: "success",
+      code: "SUCCESS",
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 // get all featured
 
+export const getAllFeatured = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const products = await Product.find({ is_featured: true });
+    res.status(200).json({
+      message: "featured products fetched",
+      data: products,
+      status: "success",
+      code: "SUCCESS",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // get all new arrivals
+export const getAllNewArrivals = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const products = await Product.find({ new_arrival: true });
+    res.status(200).json({
+      message: "new arrival products fetched",
+      data: products,
+      status: "success",
+      code: "SUCCESS",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
