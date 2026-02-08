@@ -65,6 +65,12 @@ export const authenticate = (roles?: ROLE[]) => {
         );
       }
 
+      req.user = {
+        id: user._id,
+        role: user.role,
+        email: user.email,
+      };
+
       // next()
       next();
     } catch (error) {
