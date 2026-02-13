@@ -6,9 +6,9 @@ import { OnlyUsers } from "../types/enum.types";
 const router = Router();
 
 //create/remove
-router.post("/", authenticate(OnlyUsers), create);
+router.post("/", create);
 
 //get
-router.get("/", authenticate(OnlyUsers), getWishlist);
+router.get("/", getWishlist);
 
 export default router;

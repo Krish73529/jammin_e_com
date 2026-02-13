@@ -40,7 +40,7 @@ router.post(
       maxCount: 5,
     },
   ]),
-  authenticate(OnlyAdmins),
+
   create,
 );
 
@@ -57,7 +57,7 @@ router.put(
       maxCount: 5,
     },
   ]),
-  authenticate(OnlyAdmins),
+
   update,
 );
 // delete

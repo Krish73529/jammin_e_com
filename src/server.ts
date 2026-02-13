@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 
 //! importing routes
 import authRoutes from "./routes/auth.routes";
+import cartRoutes from "./routes/cart.routes";
 import userRoutes from "./routes/user.routes";
 import brandRoutes from "./routes/brand.routes";
 import categoryRoutes from "./routes/category.routes";
@@ -34,6 +35,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 //! using routes
+app.use("/api/cart", cartRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/brands", brandRoutes);

@@ -19,7 +19,7 @@ router.get("/", getAll);
 router.get("/:id", getById);
 
 // create
-router.post("/", upload.single("image"), authenticate(OnlyAdmins), create);
+router.post("/", upload.single("image"), create);
 
 //update
 router.put("/:id", upload.single("image"), authenticate(OnlyAdmins), update);

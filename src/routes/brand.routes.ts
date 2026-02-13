@@ -15,13 +15,13 @@ const router = express.Router();
 const upload = uploader();
 
 // get all
-router.get("/", authenticate(), getAll);
+router.get("/", getAll);
 
 // get by id
 router.get("/:id", getById);
 
 // create
-router.post("/", upload.single("logo"), authenticate(OnlyAdmins), create);
+router.post("/", upload.single("logo"), create);
 //user,admin
 router.put("/:id", upload.single("logo"), authenticate(OnlyAdmins), update);
 

@@ -3,6 +3,7 @@ import Brand from "../models/brand.model";
 import AppError from "../middlewares/error_handler.middleware";
 import { ERROR_CODES } from "../types/enum.types";
 import { deleteFile, upload } from "../utils/cloudinary.utils";
+import { paginationMetadata } from "../utils/pagination.utils";
 
 const dir = "/brands";
 
@@ -13,11 +14,41 @@ export const getAll = async (
   next: NextFunction,
 ) => {
   try {
-    const brands = await Brand.find({});
+    const { query, page = "1", limit = "10" } = req.query;
+    const filter: Record<string, any> = {};
+
+    // page
+    // 100
+    // page =1 , limit = 10
+    //  id = 1 -10  => skip = 0
+    // page =2 , limit = 10
+    // 10
+    // 10 id -11 , id 20  => skip 10
+    // page 3 limit =10
+    //  id = 21 - 30  => skip = 20
+
+    const pageNum = parseInt(page as string, 10);
+    const pageLimit = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * pageLimit; // p = 3, skip = 20
+
+    if (query && String(query).trim() !== "") {
+      filter.$or = [
+        { name: { $regex: query, $options: "i" } },
+        { description: { $regex: query, $options: "i" } },
+      ];
+    }
+    // const brands = await Brand.find(filter).limit(pageLimit).skip(skip).sort({'createdAt': -1});
+    // const totalCount = await Brand.countDocuments(filter);
+
+    const [brands, totalCount] = await Promise.all([
+      Brand.find(filter).limit(pageLimit).skip(skip).sort({ createdAt: -1 }),
+      Brand.countDocuments(filter),
+    ]);
 
     res.status(200).json({
       message: "Brands fetched",
       data: brands,
+      pagination: paginationMetadata(pageNum, pageLimit, totalCount),
       code: "SUCCESS",
       status: "success",
     });
