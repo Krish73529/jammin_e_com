@@ -5,12 +5,15 @@ import { ERROR_CODES } from "../types/enum.types";
 import Category from "../models/category.model";
 import Brand from "../models/brand.model";
 import { deleteFile, upload } from "../utils/cloudinary.utils";
+import { SortOrder } from "mongoose";
+import { paginationMetadata } from "../utils/pagination.utils";
 
 interface IExpressFiles {
   cover_image?: Express.Multer.File[];
   images?: Express.Multer.File[];
 }
 
+// https://domain.com/products?query=xyz&page=1&perPage=10
 const dir = "/products";
 
 //! get all
@@ -20,11 +23,83 @@ export const getAll = async (
   next: NextFunction,
 ) => {
   try {
-    const products = await Product.find({});
+    // filter & pagination
+    const {
+      query,
+      page = "1",
+      limit = "10",
+      category,
+      brand,
+      minPrice,
+      maxPrice,
+      sortField = "createdAt:desc",
+    } = req.query;
+    const filter: Record<string, any> = {};
+    const pageNum = parseInt(page as string);
+    const pageLimit = parseInt(limit as string);
+    const skip = (pageNum - 1) * pageLimit;
+
+    //TODO: name , category , brand ,price range , pagination
+
+    if (query && String(query).trim() !== "") {
+      filter.$or = [
+        {
+          name: {
+            $regex: query,
+            $options: "i",
+          },
+        },
+        {
+          description: {
+            $regex: query,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    //* category
+    if (category) {
+      filter.category = category;
+    }
+
+    //* brand
+    if (brand) {
+      filter.brand = brand;
+    }
+
+    //* price range
+    if (maxPrice || minPrice) {
+      if (maxPrice) {
+        filter.price.$lte = parseInt(maxPrice as string, 10);
+      }
+
+      if (minPrice) {
+        filter.price.$gte = parseInt(minPrice as string, 10);
+      }
+    }
+
+    // sort obj
+    const [field, order] = String(sortField).split(":"); // [createdAt,desc]
+
+    const sortObj: Record<string, SortOrder> = {
+      [field]: order === "asc" ? 1 : -1,
+    };
+
+    const [products, totalCount] = await Promise.all([
+      Product.find(filter)
+        .populate("category")
+        .populate("brand")
+        .limit(pageLimit)
+        .skip(skip)
+        .sort(sortObj),
+      Product.countDocuments(filter),
+    ]);
 
     res.status(200).json({
       message: "Products fetched",
       data: products,
+      pagination: paginationMetadata(pageNum, pageLimit, totalCount),
       status: "success",
       code: "SUCCESS",
     });
@@ -41,7 +116,9 @@ export const getById = async (
 ) => {
   try {
     const { id } = req.params;
-    const product = await Product.findOne({ _id: id });
+    const product = await Product.findOne({ _id: id })
+      .populate({ path: "category", select: "name image _id " })
+      .populate("brand");
 
     if (!product) {
       throw new AppError("Product not found", ERROR_CODES.NOT_FOUND_ERR, 404);
@@ -79,8 +156,7 @@ export const create = async (
 
     // images
     const { cover_image, images } = req.files as IExpressFiles;
-    console.log(cover_image);
-    console.log(images);
+
     if (!cover_image) {
       throw new AppError(
         "cover_image is required",
@@ -224,6 +300,7 @@ export const update = async (
     }
 
     //! images
+    // TODO: update images
 
     res.status(200).json({
       message: `Product ${id} updated`,

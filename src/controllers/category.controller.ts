@@ -3,6 +3,7 @@ import Category from "../models/category.model";
 import AppError from "../middlewares/error_handler.middleware";
 import { ERROR_CODES } from "../types/enum.types";
 import { deleteFile, upload } from "../utils/cloudinary.utils";
+import { paginationMetadata } from "../utils/pagination.utils";
 
 const dir = "/categories";
 
@@ -13,11 +14,38 @@ export const getAll = async (
   next: NextFunction,
 ) => {
   try {
-    const categories = await Category.find({});
+    const { query, page = "1", limit = "10" } = req.query;
+    const filter: Record<string, any> = {};
+    const pageNum = parseInt(page as string, 10);
+    const pageLimit = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * pageLimit;
+
+    if (query && String(query).trim() !== "") {
+      filter.$or = [
+        {
+          name: {
+            $regex: query,
+            $options: "i",
+          },
+        },
+        {
+          description: {
+            $regex: query,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    const [categories, totalCount] = await Promise.all([
+      Category.find(filter).limit(pageLimit).skip(skip),
+      Category.countDocuments(filter),
+    ]);
 
     res.status(200).json({
-      message: "categorys fetched",
+      message: "categories fetched",
       data: categories,
+      pagination: paginationMetadata(pageNum, pageLimit, totalCount),
       code: "SUCCESS",
       status: "success",
     });
